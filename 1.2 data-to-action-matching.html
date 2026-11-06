@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>From Data to Action</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#dee5eb;color:#182d40;font:16px/1.5 Arial,Helvetica,sans-serif}main{max-width:960px;margin:auto;padding:24px}h1{font-size:26px;line-height:1.3;margin:0 0 20px}#items{display:grid;gap:14px}.item{background:#9cbad4;border-radius:10px;padding:18px 20px}.row{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:20px;align-items:center}.statement{margin:0;font-size:17px}select{width:100%;min-height:46px;padding:10px;border:1px solid #435e74;border-radius:6px;background:#dee5eb;color:#182d40;font:inherit;cursor:pointer}button{font:inherit;min-height:44px;border:1px solid #182d40;border-radius:6px;padding:10px 20px;cursor:pointer;background:#182d40;color:#fff}button.secondary{background:#dee5eb;color:#182d40}button:focus-visible,select:focus-visible{outline:3px solid #182d40;outline-offset:4px}.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}.feedback{margin:12px 0 0;padding-top:10px;border-top:1px solid #435e74}.feedback:empty{display:none}#result{font-weight:bold;margin:16px 0 0}#result:empty{display:none}@media(max-width:620px){.row{grid-template-columns:1fr;gap:12px}}@media(max-width:480px){main{padding:16px}.item{padding:16px}h1{font-size:23px}.statement{font-size:16px}}
+</style>
+</head>
+<body><main>
+<h1>From Data to Action</h1>
+<form id="activity"><div id="items"></div>
+<div class="actions"><button type="button" id="check">Check Answers</button><button type="button" class="secondary" id="reset">Reset</button></div>
+<p id="result" role="status" aria-live="polite" aria-atomic="true"></p>
+</form></main>
+<script>
+(()=>{
+const data=[
+{statement:'A patient waited 63 minutes.',answers:['Raw data'],explanation:'This is a single recorded observation before it has been summarised or interpreted.'},
+{statement:'The average waiting time was 41 minutes.',answers:['Information'],explanation:'Individual waiting times have been processed into a meaningful summary: an average.'},
+{statement:'Patients who waited longer than 45 minutes had lower satisfaction scores.',answers:['Insight'],explanation:'The statement identifies a relationship between waiting time and satisfaction that can inform decisions. It does not, on its own, establish causation.'},
+{statement:'The clinic added one extra nurse during peak hours.',answers:['Action'],explanation:'The clinic has made an operational change.'},
+{statement:'Monday morning had the highest number of appointments.',answers:['Information','Knowledge'],explanation:'Information: appointment data has been summarised to identify the busiest period. Knowledge is also accepted when the pattern has been interpreted in context to build an understanding of demand.'}
+];
+function shuffle(values){const shuffled=values.slice();for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]}return shuffled}
+const categories=['Raw data','Information','Insight','Knowledge','Action'];
+const items=document.getElementById('items'),form=document.getElementById('activity'),result=document.getElementById('result');
+data.forEach((item,i)=>{const card=document.createElement('div');card.className='item';const row=document.createElement('div');row.className='row';const label=document.createElement('label');label.className='statement';label.htmlFor='answer-'+i;label.textContent=(i+1)+'. '+item.statement;const select=document.createElement('select');select.id='answer-'+i;select.name='answer-'+i;select.setAttribute('aria-describedby','feedback-'+i);const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Select a match';select.append(placeholder);shuffle(categories).forEach(category=>{const option=document.createElement('option');option.value=category;option.textContent=category;select.append(option)});row.append(label,select);const feedback=document.createElement('p');feedback.className='feedback';feedback.id='feedback-'+i;card.append(row,feedback);items.append(card)});
+function checkAnswers(){
+let score=0,unanswered=0;
+data.forEach((item,i)=>{
+const select=document.getElementById('answer-'+i);
+const feedback=document.getElementById('feedback-'+i);
+if(!select.value){unanswered++;feedback.textContent='Not yet matched.';return}
+const correct=item.answers.includes(select.value);
+if(correct)score++;
+feedback.textContent=(correct?'Correct. ':'Incorrect. Correct match: '+item.answers.join(' or ')+'. ')+item.explanation;
+});
+result.textContent=score+' of '+data.length+' correct.'+(unanswered?' '+unanswered+' unmatched.':score===data.length?' All statements correctly matched.':'');
+}
+document.getElementById('check').addEventListener('click',checkAnswers);
+form.addEventListener('submit',event=>{event.preventDefault();checkAnswers()});
+form.addEventListener('change',event=>{
+if(event.target.tagName!=='SELECT')return;
+const i=Number(event.target.id.replace('answer-',''));
+document.getElementById('feedback-'+i).textContent='';
+result.textContent='';
+});
+document.getElementById('reset').addEventListener('click',()=>{
+form.reset();
+data.forEach((_,i)=>{const select=document.getElementById('answer-'+i);select.replaceChildren(new Option('Select a match',''),...shuffle(categories).map(category=>new Option(category,category)));document.getElementById('feedback-'+i).textContent=''});
+result.textContent='Activity reset.';
+document.getElementById('answer-0').focus();
+});
+})();
+</script></body></html>
